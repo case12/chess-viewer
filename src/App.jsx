@@ -39,8 +39,8 @@ function App() {
         <h3>How to use:</h3>
         <ul>
           <li>Drag and drop pieces to move them anywhere on the board</li>
-          <li>Lines show which squares each piece is threatening</li>
-          <li>Line thickness indicates piece importance (Queen &gt; Rook &gt; Bishop/Knight &gt; Pawn)</li>
+          <li>Lines show which squares each piece can move to or capture</li>
+          <li>Blue lines indicate white piece moves, red lines indicate black piece moves</li>
           <li>Toggle white/black threat lines using the controls above</li>
         </ul>
       </div>

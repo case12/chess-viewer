@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react'
 import './ChessBoard.css'
 
-// Unicode chess pieces
+// Unicode chess pieces (using filled symbols for both, color controlled by CSS)
 const PIECES = {
   white: {
-    king: '♔',
-    queen: '♕',
-    rook: '♖',
-    bishop: '♗',
-    knight: '♘',
-    pawn: '♙'
+    king: '♚',
+    queen: '♛',
+    rook: '♜',
+    bishop: '♝',
+    knight: '♞',
+    pawn: '♟'
   },
   black: {
     king: '♚',
@@ -21,33 +21,93 @@ const PIECES = {
   }
 }
 
+// Famous chess positions
+const POSITIONS = {
+  starting: {
+    name: "Starting Position",
+    board: [
+      // Row 8 (index 0)
+      { piece: 'rook', color: 'black' },
+      { piece: 'knight', color: 'black' },
+      { piece: 'bishop', color: 'black' },
+      { piece: 'queen', color: 'black' },
+      { piece: 'king', color: 'black' },
+      { piece: 'bishop', color: 'black' },
+      { piece: 'knight', color: 'black' },
+      { piece: 'rook', color: 'black' },
+      // Row 7 (index 8-15)
+      ...Array(8).fill({ piece: 'pawn', color: 'black' }),
+      // Rows 6-3 (index 16-47) - empty
+      ...Array(32).fill(null),
+      // Row 2 (index 48-55)
+      ...Array(8).fill({ piece: 'pawn', color: 'white' }),
+      // Row 1 (index 56-63)
+      { piece: 'rook', color: 'white' },
+      { piece: 'knight', color: 'white' },
+      { piece: 'bishop', color: 'white' },
+      { piece: 'queen', color: 'white' },
+      { piece: 'king', color: 'white' },
+      { piece: 'bishop', color: 'white' },
+      { piece: 'knight', color: 'white' },
+      { piece: 'rook', color: 'white' },
+    ]
+  },
+  italian: {
+    name: "Italian Game Opening",
+    board: [
+      { piece: 'rook', color: 'black' }, null, { piece: 'bishop', color: 'black' }, { piece: 'queen', color: 'black' }, { piece: 'king', color: 'black' }, { piece: 'bishop', color: 'black' }, null, { piece: 'rook', color: 'black' },
+      { piece: 'pawn', color: 'black' }, { piece: 'pawn', color: 'black' }, { piece: 'pawn', color: 'black' }, { piece: 'pawn', color: 'black' }, null, { piece: 'pawn', color: 'black' }, { piece: 'pawn', color: 'black' }, { piece: 'pawn', color: 'black' },
+      null, null, { piece: 'knight', color: 'black' }, null, null, { piece: 'knight', color: 'black' }, null, null,
+      null, null, null, null, { piece: 'pawn', color: 'black' }, null, null, null,
+      null, null, { piece: 'bishop', color: 'white' }, null, { piece: 'pawn', color: 'white' }, null, null, null,
+      null, null, null, null, null, { piece: 'knight', color: 'white' }, null, null,
+      { piece: 'pawn', color: 'white' }, { piece: 'pawn', color: 'white' }, { piece: 'pawn', color: 'white' }, { piece: 'pawn', color: 'white' }, null, { piece: 'pawn', color: 'white' }, { piece: 'pawn', color: 'white' }, { piece: 'pawn', color: 'white' },
+      { piece: 'rook', color: 'white' }, { piece: 'knight', color: 'white' }, { piece: 'bishop', color: 'white' }, { piece: 'queen', color: 'white' }, { piece: 'king', color: 'white' }, null, null, { piece: 'rook', color: 'white' },
+    ]
+  },
+  scholarsMate: {
+    name: "Scholar's Mate",
+    board: [
+      { piece: 'rook', color: 'black' }, { piece: 'knight', color: 'black' }, { piece: 'bishop', color: 'black' }, null, { piece: 'king', color: 'black' }, { piece: 'bishop', color: 'black' }, { piece: 'knight', color: 'black' }, { piece: 'rook', color: 'black' },
+      { piece: 'pawn', color: 'black' }, { piece: 'pawn', color: 'black' }, { piece: 'pawn', color: 'black' }, null, null, { piece: 'pawn', color: 'black' }, { piece: 'pawn', color: 'black' }, { piece: 'pawn', color: 'black' },
+      null, null, null, null, { piece: 'pawn', color: 'black' }, null, null, null,
+      null, null, null, { piece: 'pawn', color: 'black' }, null, null, null, null,
+      null, null, { piece: 'bishop', color: 'white' }, null, { piece: 'pawn', color: 'white' }, null, { piece: 'queen', color: 'white' }, null,
+      null, null, null, null, null, { piece: 'knight', color: 'white' }, null, null,
+      { piece: 'pawn', color: 'white' }, { piece: 'pawn', color: 'white' }, { piece: 'pawn', color: 'white' }, { piece: 'pawn', color: 'white' }, null, { piece: 'pawn', color: 'white' }, { piece: 'pawn', color: 'white' }, { piece: 'pawn', color: 'white' },
+      { piece: 'rook', color: 'white' }, { piece: 'knight', color: 'white' }, { piece: 'bishop', color: 'white' }, null, { piece: 'king', color: 'white' }, null, null, { piece: 'rook', color: 'white' },
+    ]
+  },
+  endgame: {
+    name: "Rook Endgame",
+    board: [
+      null, null, null, null, null, null, { piece: 'king', color: 'black' }, null,
+      null, null, null, null, null, null, null, { piece: 'pawn', color: 'black' },
+      null, null, null, null, null, { piece: 'pawn', color: 'black' }, null, null,
+      null, null, null, { piece: 'rook', color: 'white' }, null, null, null, null,
+      null, null, null, null, null, null, { piece: 'pawn', color: 'white' }, null,
+      null, null, null, null, null, null, null, null,
+      null, null, null, null, { piece: 'king', color: 'white' }, null, null, null,
+      null, null, null, { piece: 'rook', color: 'black' }, null, null, null, null,
+    ]
+  },
+  tactics: {
+    name: "Tactical Position",
+    board: [
+      { piece: 'rook', color: 'black' }, null, null, null, { piece: 'king', color: 'black' }, null, null, { piece: 'rook', color: 'black' },
+      { piece: 'pawn', color: 'black' }, { piece: 'pawn', color: 'black' }, null, null, null, { piece: 'pawn', color: 'black' }, { piece: 'pawn', color: 'black' }, { piece: 'pawn', color: 'black' },
+      null, null, { piece: 'pawn', color: 'black' }, null, null, { piece: 'knight', color: 'black' }, null, null,
+      null, null, { piece: 'bishop', color: 'white' }, { piece: 'pawn', color: 'black' }, { piece: 'pawn', color: 'white' }, null, null, null,
+      null, null, { piece: 'bishop', color: 'black' }, { piece: 'pawn', color: 'white' }, null, null, null, null,
+      null, null, { piece: 'knight', color: 'white' }, null, null, { piece: 'knight', color: 'white' }, null, null,
+      { piece: 'pawn', color: 'white' }, { piece: 'pawn', color: 'white' }, null, null, null, { piece: 'pawn', color: 'white' }, { piece: 'pawn', color: 'white' }, { piece: 'pawn', color: 'white' },
+      { piece: 'rook', color: 'white' }, null, null, { piece: 'queen', color: 'white' }, null, { piece: 'rook', color: 'white' }, { piece: 'king', color: 'white' }, null,
+    ]
+  }
+}
+
 // Initial chess board setup
-const INITIAL_BOARD = [
-  // Row 8 (index 0)
-  { piece: 'rook', color: 'black' },
-  { piece: 'knight', color: 'black' },
-  { piece: 'bishop', color: 'black' },
-  { piece: 'queen', color: 'black' },
-  { piece: 'king', color: 'black' },
-  { piece: 'bishop', color: 'black' },
-  { piece: 'knight', color: 'black' },
-  { piece: 'rook', color: 'black' },
-  // Row 7 (index 8-15)
-  ...Array(8).fill({ piece: 'pawn', color: 'black' }),
-  // Rows 6-3 (index 16-47) - empty
-  ...Array(32).fill(null),
-  // Row 2 (index 48-55)
-  ...Array(8).fill({ piece: 'pawn', color: 'white' }),
-  // Row 1 (index 56-63)
-  { piece: 'rook', color: 'white' },
-  { piece: 'knight', color: 'white' },
-  { piece: 'bishop', color: 'white' },
-  { piece: 'queen', color: 'white' },
-  { piece: 'king', color: 'white' },
-  { piece: 'bishop', color: 'white' },
-  { piece: 'knight', color: 'white' },
-  { piece: 'rook', color: 'white' },
-]
+const INITIAL_BOARD = POSITIONS.starting.board
 
 // Piece importance for line thickness
 const PIECE_WEIGHT = {
@@ -63,6 +123,13 @@ function ChessBoard({ showWhiteThreats, showBlackThreats }) {
   const [board, setBoard] = useState(INITIAL_BOARD)
   const [draggedPiece, setDraggedPiece] = useState(null)
   const [threats, setThreats] = useState([])
+  const [selectedPosition, setSelectedPosition] = useState('starting')
+
+  // Load a preset position
+  const loadPosition = (positionKey) => {
+    setSelectedPosition(positionKey)
+    setBoard([...POSITIONS[positionKey].board])
+  }
 
   // Calculate all threats whenever board changes
   useEffect(() => {
@@ -236,14 +303,26 @@ function ChessBoard({ showWhiteThreats, showBlackThreats }) {
   })
 
   return (
-    <div className="chess-board-container">
-      <svg className="threat-lines" width="640" height="640">
+    <div className="chess-viewer-wrapper">
+      <div className="position-selector">
+        <label htmlFor="position-select">Select Position:</label>
+        <select
+          id="position-select"
+          value={selectedPosition}
+          onChange={(e) => loadPosition(e.target.value)}
+          className="position-dropdown"
+        >
+          {Object.entries(POSITIONS).map(([key, position]) => (
+            <option key={key} value={key}>{position.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="chess-board-container">
+        <svg className="threat-lines" width="640" height="640">
         {visibleThreats.map((threat, i) => {
           const from = getSquareCenter(threat.from)
           const to = getSquareCenter(threat.to)
-          const weight = PIECE_WEIGHT[threat.piece]
-          const strokeWidth = weight * 0.8
-          const opacity = 0.3 + (weight * 0.15)
 
           return (
             <line
@@ -253,8 +332,8 @@ function ChessBoard({ showWhiteThreats, showBlackThreats }) {
               x2={to.x}
               y2={to.y}
               stroke={threat.color === 'white' ? 'rgba(100, 180, 255, 0.9)' : 'rgba(255, 80, 80, 0.9)'}
-              strokeWidth={strokeWidth}
-              opacity={opacity}
+              strokeWidth={4}
+              opacity={0.6}
               className="threat-line"
             />
           )
@@ -296,6 +375,7 @@ function ChessBoard({ showWhiteThreats, showBlackThreats }) {
           )
         })}
       </div>
+    </div>
     </div>
   )
 }
