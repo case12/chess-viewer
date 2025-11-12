@@ -1,10 +1,35 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import ChessBoard from './components/ChessBoard'
 import './App.css'
+
+// Unicode chess pieces
+const PIECE_SYMBOLS = {
+  white: {
+    king: '♚',
+    queen: '♛',
+    rook: '♜',
+    bishop: '♝',
+    knight: '♞',
+    pawn: '♟'
+  },
+  black: {
+    king: '♚',
+    queen: '♛',
+    rook: '♜',
+    bishop: '♝',
+    knight: '♞',
+    pawn: '♟'
+  }
+}
 
 function App() {
   // Modes: 'off', 'white', 'black', 'both'
   const [threatMode, setThreatMode] = useState('both')
+  const [capturedPieces, setCapturedPieces] = useState([])
+
+  const handleCapturedPiecesChange = useCallback((pieces) => {
+    setCapturedPieces(pieces)
+  }, [])
 
   const cycleThreatMode = () => {
     const modes = ['off', 'white', 'black', 'both']
@@ -37,14 +62,27 @@ function App() {
           </button>
         </div>
 
-        <div className="instructions">
-          <h3>How to use:</h3>
-          <ul>
-            <li>Drag and drop pieces to move them anywhere on the board</li>
-            <li>Red overlay shows threatened squares - darker means more threats</li>
-            <li>💥 emojis show the number of pieces attacking each square</li>
-            <li>Click the button above to toggle threat visualization</li>
-          </ul>
+        <div className="captured-pieces">
+          <h3>Available Pieces</h3>
+          {capturedPieces.length === 0 ? (
+            <p className="no-pieces">All pieces are on the board</p>
+          ) : (
+            <div className="pieces-list">
+              {capturedPieces.map((p, i) => (
+                <div
+                  key={i}
+                  className={`captured-piece ${p.color}`}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('piece', JSON.stringify(p))
+                    e.dataTransfer.effectAllowed = 'copy'
+                  }}
+                >
+                  {PIECE_SYMBOLS[p.color][p.piece]}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -52,6 +90,7 @@ function App() {
         <ChessBoard
           showWhiteThreats={threatMode === 'white' || threatMode === 'both'}
           showBlackThreats={threatMode === 'black' || threatMode === 'both'}
+          onCapturedPiecesChange={handleCapturedPiecesChange}
         />
       </div>
     </div>

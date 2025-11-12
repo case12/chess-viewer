@@ -119,9 +119,30 @@ const PIECE_WEIGHT = {
   king: 1
 }
 
-function ChessBoard({ showWhiteThreats, showBlackThreats }) {
+// Full set of pieces for each color
+const FULL_PIECE_SET = {
+  white: [
+    { piece: 'king', count: 1 },
+    { piece: 'queen', count: 1 },
+    { piece: 'rook', count: 2 },
+    { piece: 'bishop', count: 2 },
+    { piece: 'knight', count: 2 },
+    { piece: 'pawn', count: 8 }
+  ],
+  black: [
+    { piece: 'king', count: 1 },
+    { piece: 'queen', count: 1 },
+    { piece: 'rook', count: 2 },
+    { piece: 'bishop', count: 2 },
+    { piece: 'knight', count: 2 },
+    { piece: 'pawn', count: 8 }
+  ]
+}
+
+function ChessBoard({ showWhiteThreats, showBlackThreats, onCapturedPiecesChange }) {
   const [board, setBoard] = useState(INITIAL_BOARD)
   const [draggedPiece, setDraggedPiece] = useState(null)
+  const [draggedFromCaptures, setDraggedFromCaptures] = useState(null)
   const [threats, setThreats] = useState([])
   const [selectedPosition, setSelectedPosition] = useState('starting')
 
@@ -130,6 +151,41 @@ function ChessBoard({ showWhiteThreats, showBlackThreats }) {
     setSelectedPosition(positionKey)
     setBoard([...POSITIONS[positionKey].board])
   }
+
+  // Calculate captured/missing pieces
+  useEffect(() => {
+    const piecesOnBoard = { white: {}, black: {} }
+
+    // Count pieces on board
+    board.forEach(square => {
+      if (square) {
+        const { color, piece } = square
+        piecesOnBoard[color][piece] = (piecesOnBoard[color][piece] || 0) + 1
+      }
+    })
+
+    // Calculate missing pieces
+    const capturedPieces = []
+
+    if (FULL_PIECE_SET) {
+      ['white', 'black'].forEach(color => {
+        const pieceSet = FULL_PIECE_SET[color]
+        if (pieceSet) {
+          pieceSet.forEach(({ piece, count }) => {
+            const onBoard = piecesOnBoard[color][piece] || 0
+            const missing = count - onBoard
+            for (let i = 0; i < missing; i++) {
+              capturedPieces.push({ piece, color })
+            }
+          })
+        }
+      })
+    }
+
+    if (onCapturedPiecesChange) {
+      onCapturedPiecesChange(capturedPieces)
+    }
+  }, [board, onCapturedPiecesChange])
 
   // Calculate all threats whenever board changes
   useEffect(() => {
@@ -265,17 +321,60 @@ function ChessBoard({ showWhiteThreats, showBlackThreats }) {
   // Drag and drop handlers
   function handleDragStart(e, index) {
     setDraggedPiece(index)
+    setDraggedFromCaptures(null)
     e.dataTransfer.effectAllowed = 'move'
+  }
+
+  function handleDragStartFromCaptures(e, piece, color) {
+    setDraggedFromCaptures({ piece, color })
+    setDraggedPiece(null)
+    e.dataTransfer.effectAllowed = 'copy'
   }
 
   function handleDragOver(e) {
     e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
+    // Use 'move' for board pieces, 'copy' for sidebar pieces
+    if (draggedPiece !== null) {
+      e.dataTransfer.dropEffect = 'move'
+    } else {
+      e.dataTransfer.dropEffect = 'copy'
+    }
   }
 
   function handleDrop(e, targetIndex) {
     e.preventDefault()
+
+    // Check if dropping from sidebar (captured pieces)
+    const pieceData = e.dataTransfer.getData('piece')
+    if (pieceData) {
+      try {
+        const piece = JSON.parse(pieceData)
+        const newBoard = [...board]
+        newBoard[targetIndex] = piece
+        setBoard(newBoard)
+        return
+      } catch (err) {
+        console.error('Failed to parse piece data:', err)
+      }
+    }
+
+    // Dropping from captured pieces (internal state)
+    if (draggedFromCaptures) {
+      const newBoard = [...board]
+      newBoard[targetIndex] = { ...draggedFromCaptures }
+      setBoard(newBoard)
+      setDraggedFromCaptures(null)
+      return
+    }
+
+    // Dropping from board
     if (draggedPiece !== null) {
+      // Don't do anything if dropping on the same square
+      if (draggedPiece === targetIndex) {
+        setDraggedPiece(null)
+        return
+      }
+
       const newBoard = [...board]
       newBoard[targetIndex] = board[draggedPiece]
       newBoard[draggedPiece] = null
