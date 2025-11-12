@@ -295,11 +295,20 @@ function ChessBoard({ showWhiteThreats, showBlackThreats }) {
     }
   }
 
-  // Filter threats based on toggle settings
+  // Filter threats based on toggle settings and group by target square
   const visibleThreats = threats.filter(threat => {
     if (threat.color === 'white') return showWhiteThreats
     if (threat.color === 'black') return showBlackThreats
     return false
+  })
+
+  // Group threats by target square
+  const threatsBySquare = {}
+  visibleThreats.forEach(threat => {
+    if (!threatsBySquare[threat.to]) {
+      threatsBySquare[threat.to] = []
+    }
+    threatsBySquare[threat.to].push(threat)
   })
 
   return (
@@ -319,32 +328,13 @@ function ChessBoard({ showWhiteThreats, showBlackThreats }) {
       </div>
 
       <div className="chess-board-container">
-        <svg className="threat-lines" width="640" height="640">
-        {visibleThreats.map((threat, i) => {
-          const from = getSquareCenter(threat.from)
-          const to = getSquareCenter(threat.to)
-
-          return (
-            <line
-              key={`${threat.from}-${threat.to}-${i}`}
-              x1={from.x}
-              y1={from.y}
-              x2={to.x}
-              y2={to.y}
-              stroke={threat.color === 'white' ? 'rgba(100, 180, 255, 0.9)' : 'rgba(255, 80, 80, 0.9)'}
-              strokeWidth={4}
-              opacity={0.6}
-              className="threat-line"
-            />
-          )
-        })}
-      </svg>
 
       <div className="chess-board">
         {board.map((square, index) => {
           const row = Math.floor(index / 8)
           const col = index % 8
           const isLight = (row + col) % 2 === 0
+          const threatsToThisSquare = threatsBySquare[index] || []
 
           return (
             <div
@@ -353,6 +343,25 @@ function ChessBoard({ showWhiteThreats, showBlackThreats }) {
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, index)}
             >
+              {/* Threat heat map overlay */}
+              {threatsToThisSquare.length > 0 && (
+                <div
+                  className="threat-overlay"
+                  style={{
+                    opacity: Math.min(threatsToThisSquare.length * 0.25, 0.85)
+                  }}
+                />
+              )}
+
+              {/* Explosion indicators */}
+              {threatsToThisSquare.length > 0 && (
+                <div className="explosion-indicators">
+                  {threatsToThisSquare.map((_, i) => (
+                    <span key={i} className="explosion">💥</span>
+                  ))}
+                </div>
+              )}
+
               {square && (
                 <div
                   className={`piece ${square.color}`}
