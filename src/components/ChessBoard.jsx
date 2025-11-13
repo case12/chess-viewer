@@ -145,6 +145,7 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, onCapturedPiecesChange
   const [draggedFromCaptures, setDraggedFromCaptures] = useState(null)
   const [threats, setThreats] = useState([])
   const [selectedPosition, setSelectedPosition] = useState('starting')
+  const [hoveredSquare, setHoveredSquare] = useState(null)
 
   // Load a preset position
   const loadPosition = (positionKey) => {
@@ -401,7 +402,7 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, onCapturedPiecesChange
     return false
   })
 
-  // Group threats by target square
+  // Group threats by target square (for display)
   const threatsBySquare = {}
   visibleThreats.forEach(threat => {
     if (!threatsBySquare[threat.to]) {
@@ -409,6 +410,20 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, onCapturedPiecesChange
     }
     threatsBySquare[threat.to].push(threat)
   })
+
+  // Group ALL threats by target square (for hover highlighting - ignores filters)
+  const allThreatsBySquare = {}
+  threats.forEach(threat => {
+    if (!allThreatsBySquare[threat.to]) {
+      allThreatsBySquare[threat.to] = []
+    }
+    allThreatsBySquare[threat.to].push(threat)
+  })
+
+  // Get pieces threatening the hovered square (use all threats, not filtered)
+  const threateningPieces = hoveredSquare !== null
+    ? (allThreatsBySquare[hoveredSquare] || []).map(t => t.from)
+    : []
 
   return (
     <div className="chess-viewer-wrapper">
@@ -441,6 +456,8 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, onCapturedPiecesChange
               className={`square ${isLight ? 'light' : 'dark'}`}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, index)}
+              onMouseEnter={() => setHoveredSquare(index)}
+              onMouseLeave={() => setHoveredSquare(null)}
             >
               {/* Threat heat map overlay */}
               {threatsToThisSquare.length > 0 && (
@@ -452,18 +469,26 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, onCapturedPiecesChange
                 />
               )}
 
-              {/* Explosion indicators */}
+              {/* Threat indicators */}
               {threatsToThisSquare.length > 0 && (
                 <div className="explosion-indicators">
-                  {threatsToThisSquare.map((_, i) => (
-                    <span key={i} className="explosion">💥</span>
-                  ))}
+                  {threatsToThisSquare.map((threat, i) => {
+                    // Check if this square has a piece that's being threatened by opposite color
+                    const isCaptureThreat = square && square.color !== threat.color
+                    // Use bullseye for captures, white/black circles for empty squares
+                    const emoji = isCaptureThreat ? '🎯' : (threat.color === 'white' ? '⚪' : '⚫')
+                    return (
+                      <span key={i} className="explosion">
+                        {emoji}
+                      </span>
+                    )
+                  })}
                 </div>
               )}
 
               {square && (
                 <div
-                  className={`piece ${square.color}`}
+                  className={`piece ${square.color} ${square.piece === 'king' ? 'king-piece' : ''} ${square.piece === 'queen' ? 'queen-piece' : ''} ${square.piece === 'bishop' ? 'bishop-piece' : ''} ${square.piece === 'knight' ? 'knight-piece' : ''} ${threateningPieces.includes(index) ? 'threatening' : ''}`}
                   draggable
                   onDragStart={(e) => handleDragStart(e, index)}
                 >

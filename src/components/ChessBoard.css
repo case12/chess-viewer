@@ -119,7 +119,7 @@
 }
 
 .explosion {
-  font-size: clamp(16px, 2.5vw, 24px);
+  font-size: clamp(14px, 2vw, 20px);
   line-height: 1;
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
   flex-shrink: 0;
@@ -140,12 +140,48 @@
 
 .piece {
   position: relative;
-  font-size: clamp(48px, 9.6vw, 94px);
+  font-size: clamp(60px, 11vw, 110px);
   cursor: grab;
   user-select: none;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   transition: transform 0.1s ease;
   z-index: 10;
+}
+
+.piece.king-piece {
+  font-size: clamp(90px, 14.5vw, 145px);
+  transform: translateY(-9px);
+}
+
+.piece.king-piece:active {
+  transform: translateY(-9px) scale(1.1);
+}
+
+.piece.bishop-piece {
+  font-size: clamp(80px, 13.2vw, 132px);
+  transform: translateY(-8px);
+}
+
+.piece.bishop-piece:active {
+  transform: translateY(-8px) scale(1.1);
+}
+
+.piece.queen-piece {
+  font-size: clamp(80px, 13.5vw, 130px);
+  transform: translateY(-8px);
+}
+
+.piece.queen-piece:active {
+  transform: translateY(-8px) scale(1.1);
+}
+
+.piece.knight-piece {
+  font-size: clamp(70px, 12vw, 120px);
+  transform: translateY(-5px);
+}
+
+.piece.knight-piece:active {
+  transform: translateY(-5px) scale(1.1);
 }
 
 .piece:active {
@@ -161,6 +197,20 @@
 .piece.black {
   color: #000000;
   filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
+}
+
+.piece.threatening {
+  animation: pulse 0.8s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(0, 150, 255, 0.9)) brightness(1.3);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 .coord-label {
