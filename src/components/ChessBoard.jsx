@@ -168,6 +168,10 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showEm
   const [threats, setThreats] = useState([])
   const [hoveredSquare, setHoveredSquare] = useState(null)
 
+  // Move history state
+  const [moveHistory, setMoveHistory] = useState([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
+
   // Load flipped state from localStorage
   const [flipped, setFlipped] = useState(() => {
     const saved = localStorage.getItem('boardFlipped')
@@ -189,10 +193,47 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showEm
     localStorage.setItem('boardFlipped', JSON.stringify(flipped))
   }, [flipped])
 
+  // Initialize history with current board on mount
+  useEffect(() => {
+    if (moveHistory.length === 0) {
+      setMoveHistory([board])
+      setHistoryIndex(0)
+    }
+  }, [])
+
+  // Keyboard navigation for move history
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        navigateHistory(-1)
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        navigateHistory(1)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [historyIndex, moveHistory])
+
+  // Navigate through move history
+  function navigateHistory(direction) {
+    const newIndex = historyIndex + direction
+    if (newIndex >= 0 && newIndex < moveHistory.length) {
+      setHistoryIndex(newIndex)
+      setBoard([...moveHistory[newIndex]])
+    }
+  }
+
   // Load a preset position
   const loadPosition = (positionKey) => {
     setSelectedPosition(positionKey)
-    setBoard([...POSITIONS[positionKey].board])
+    const newBoard = [...POSITIONS[positionKey].board]
+    setBoard(newBoard)
+    // Reset history when loading a new position
+    setMoveHistory([newBoard])
+    setHistoryIndex(0)
   }
 
   // Calculate captured/missing pieces
@@ -515,6 +556,7 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showEm
         const newBoard = [...board]
         newBoard[targetIndex] = piece
         setBoard(newBoard)
+        addMoveToHistory(newBoard)
         return
       } catch (err) {
         console.error('Failed to parse piece data:', err)
@@ -527,6 +569,7 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showEm
       newBoard[targetIndex] = { ...draggedFromCaptures }
       setBoard(newBoard)
       setDraggedFromCaptures(null)
+      addMoveToHistory(newBoard)
       return
     }
 
@@ -543,7 +586,18 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showEm
       newBoard[draggedPiece] = null
       setBoard(newBoard)
       setDraggedPiece(null)
+      addMoveToHistory(newBoard)
     }
+  }
+
+  // Add move to history - when a new move is made, discard any "future" moves
+  function addMoveToHistory(newBoard) {
+    // If we're in the middle of history, discard everything after current position
+    const newHistory = moveHistory.slice(0, historyIndex + 1)
+    // Add the new board state
+    newHistory.push([...newBoard])
+    setMoveHistory(newHistory)
+    setHistoryIndex(newHistory.length - 1)
   }
 
   // Get center coordinates of a square for drawing lines
@@ -608,6 +662,12 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showEm
         >
           ⇅
         </button>
+        {moveHistory.length > 0 && (
+          <div className="history-indicator">
+            Move {historyIndex + 1} of {moveHistory.length}
+            <span className="history-hint">Use ← → arrow keys to navigate</span>
+          </div>
+        )}
       </div>
 
       <div className="chess-board-container">
