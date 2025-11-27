@@ -146,6 +146,7 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showHe
   const [threats, setThreats] = useState([])
   const [selectedPosition, setSelectedPosition] = useState('starting')
   const [hoveredSquare, setHoveredSquare] = useState(null)
+  const [flipped, setFlipped] = useState(false)
 
   // Load a preset position
   const loadPosition = (positionKey) => {
@@ -559,11 +560,18 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showHe
             <option key={key} value={key}>{position.name}</option>
           ))}
         </select>
+        <button
+          onClick={() => setFlipped(!flipped)}
+          className="flip-button"
+          title="Flip board"
+        >
+          ⇅
+        </button>
       </div>
 
       <div className="chess-board-container">
 
-      <div className="chess-board">
+      <div className={`chess-board ${flipped ? 'flipped' : ''}`}>
         {board.map((square, index) => {
           const row = Math.floor(index / 8)
           const col = index % 8
@@ -643,10 +651,10 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showHe
                 </div>
               )}
               {/* Show coordinates on edge squares */}
-              {col === 0 && (
+              {(flipped ? col === 7 : col === 0) && (
                 <span className="coord-label row-label">{8 - row}</span>
               )}
-              {row === 7 && (
+              {(flipped ? row === 0 : row === 7) && (
                 <span className="coord-label col-label">
                   {String.fromCharCode(97 + col)}
                 </span>
