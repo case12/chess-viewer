@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import ChessBoard from './components/ChessBoard'
 import './App.css'
 
@@ -23,32 +23,45 @@ const PIECE_SYMBOLS = {
 }
 
 function App() {
-  // Modes: 'off', 'white', 'black', 'both'
-  const [threatMode, setThreatMode] = useState('both')
+  // Load initial states from localStorage or use defaults
+  const [showWhiteThreats, setShowWhiteThreats] = useState(() => {
+    const saved = localStorage.getItem('showWhiteThreats')
+    return saved !== null ? JSON.parse(saved) : true
+  })
+  const [showBlackThreats, setShowBlackThreats] = useState(() => {
+    const saved = localStorage.getItem('showBlackThreats')
+    return saved !== null ? JSON.parse(saved) : true
+  })
   const [capturedPieces, setCapturedPieces] = useState([])
-  const [showHighlights, setShowHighlights] = useState(true)
-  const [showHeatMap, setShowHeatMap] = useState(true)
+  const [showHighlights, setShowHighlights] = useState(() => {
+    const saved = localStorage.getItem('showHighlights')
+    return saved !== null ? JSON.parse(saved) : true
+  })
+  const [showHeatMap, setShowHeatMap] = useState(() => {
+    const saved = localStorage.getItem('showHeatMap')
+    return saved !== null ? JSON.parse(saved) : true
+  })
+
+  // Save to localStorage whenever states change
+  useEffect(() => {
+    localStorage.setItem('showWhiteThreats', JSON.stringify(showWhiteThreats))
+  }, [showWhiteThreats])
+
+  useEffect(() => {
+    localStorage.setItem('showBlackThreats', JSON.stringify(showBlackThreats))
+  }, [showBlackThreats])
+
+  useEffect(() => {
+    localStorage.setItem('showHighlights', JSON.stringify(showHighlights))
+  }, [showHighlights])
+
+  useEffect(() => {
+    localStorage.setItem('showHeatMap', JSON.stringify(showHeatMap))
+  }, [showHeatMap])
 
   const handleCapturedPiecesChange = useCallback((pieces) => {
     setCapturedPieces(pieces)
   }, [])
-
-  const cycleThreatMode = () => {
-    const modes = ['off', 'white', 'black', 'both']
-    const currentIndex = modes.indexOf(threatMode)
-    const nextIndex = (currentIndex + 1) % modes.length
-    setThreatMode(modes[nextIndex])
-  }
-
-  const getModeLabel = () => {
-    switch (threatMode) {
-      case 'off': return 'Threats: Off'
-      case 'white': return 'Threats: White Only'
-      case 'black': return 'Threats: Black Only'
-      case 'both': return 'Threats: Both'
-      default: return 'Threats'
-    }
-  }
 
   return (
     <div className="app">
@@ -59,9 +72,23 @@ function App() {
         </div>
 
         <div className="controls">
-          <button className={`threat-toggle-btn mode-${threatMode}`} onClick={cycleThreatMode}>
-            {getModeLabel()}
-          </button>
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={showWhiteThreats}
+              onChange={(e) => setShowWhiteThreats(e.target.checked)}
+            />
+            Show white threats
+          </label>
+
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={showBlackThreats}
+              onChange={(e) => setShowBlackThreats(e.target.checked)}
+            />
+            Show black threats
+          </label>
 
           <label className="checkbox-label">
             <input
@@ -108,8 +135,8 @@ function App() {
 
       <div className="board-area">
         <ChessBoard
-          showWhiteThreats={threatMode === 'white' || threatMode === 'both'}
-          showBlackThreats={threatMode === 'black' || threatMode === 'both'}
+          showWhiteThreats={showWhiteThreats}
+          showBlackThreats={showBlackThreats}
           showHighlights={showHighlights}
           showHeatMap={showHeatMap}
           onCapturedPiecesChange={handleCapturedPiecesChange}

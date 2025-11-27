@@ -140,13 +140,54 @@ const FULL_PIECE_SET = {
 }
 
 function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showHeatMap, onCapturedPiecesChange }) {
-  const [board, setBoard] = useState(INITIAL_BOARD)
+  // Load selected position from localStorage or use default
+  const [selectedPosition, setSelectedPosition] = useState(() => {
+    const saved = localStorage.getItem('selectedPosition')
+    return saved && POSITIONS[saved] ? saved : 'starting'
+  })
+
+  // Load board based on saved board state or selected position
+  const [board, setBoard] = useState(() => {
+    // Try to load custom board state first
+    const savedBoard = localStorage.getItem('boardState')
+    if (savedBoard) {
+      try {
+        return JSON.parse(savedBoard)
+      } catch (e) {
+        console.error('Failed to parse saved board state:', e)
+      }
+    }
+    // Fall back to preset position
+    const saved = localStorage.getItem('selectedPosition')
+    const positionKey = saved && POSITIONS[saved] ? saved : 'starting'
+    return [...POSITIONS[positionKey].board]
+  })
+
   const [draggedPiece, setDraggedPiece] = useState(null)
   const [draggedFromCaptures, setDraggedFromCaptures] = useState(null)
   const [threats, setThreats] = useState([])
-  const [selectedPosition, setSelectedPosition] = useState('starting')
   const [hoveredSquare, setHoveredSquare] = useState(null)
-  const [flipped, setFlipped] = useState(false)
+
+  // Load flipped state from localStorage
+  const [flipped, setFlipped] = useState(() => {
+    const saved = localStorage.getItem('boardFlipped')
+    return saved !== null ? JSON.parse(saved) : false
+  })
+
+  // Save selected position to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('selectedPosition', selectedPosition)
+  }, [selectedPosition])
+
+  // Save board state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('boardState', JSON.stringify(board))
+  }, [board])
+
+  // Save flipped state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('boardFlipped', JSON.stringify(flipped))
+  }, [flipped])
 
   // Load a preset position
   const loadPosition = (positionKey) => {
@@ -576,6 +617,7 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showHe
           const row = Math.floor(index / 8)
           const col = index % 8
           const isLight = (row + col) % 2 === 0
+          const tileColor = isLight ? '#f0d9b5' : '#b58863'
           const threatsToThisSquare = threatsBySquare[index] || []
           const allThreatsToThisSquare = allThreatsBySquare[index] || []
 
@@ -609,7 +651,18 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showHe
                     }
                     // Check if this square has a piece that's being threatened by opposite color
                     const isCaptureThreat = square && square.color !== threat.color
-                    // Use bullseye for captures, mini piece for empty squares
+                    // Map piece names to letters
+                    const pieceLetters = {
+                      king: 'K',
+                      queen: 'Q',
+                      rook: 'R',
+                      bishop: 'B',
+                      knight: 'N',
+                      pawn: 'P'
+                    }
+                    const pieceLetter = pieceLetters[threat.piece]
+
+                    // Use bullseye for captures, letter for empty squares
                     if (isCaptureThreat) {
                       return (
                         <span key={`threat-${i}`} className="explosion">
@@ -617,11 +670,13 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showHe
                         </span>
                       )
                     } else {
-                      // Show mini version of the threatening piece for empty squares
-                      const pieceSymbol = PIECES[threat.color][threat.piece]
                       return (
-                        <span key={`threat-${i}`} className={`explosion mini-piece ${threat.color}`}>
-                          {pieceSymbol}
+                        <span
+                          key={`threat-${i}`}
+                          className={`explosion mini-piece ${threat.color}`}
+                          style={{ color: tileColor }}
+                        >
+                          {pieceLetter}
                         </span>
                       )
                     }

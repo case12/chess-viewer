@@ -45,50 +45,6 @@
   gap: 15px;
 }
 
-.threat-toggle-btn {
-  padding: 12px 24px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border: 2px solid;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 200px;
-}
-
-.threat-toggle-btn.mode-off {
-  background: #1a1a1a;
-  color: #888;
-  border-color: #444;
-}
-
-.threat-toggle-btn.mode-white {
-  background: linear-gradient(135deg, #0088ff, #00ccff);
-  color: white;
-  border-color: #00ccff;
-}
-
-.threat-toggle-btn.mode-black {
-  background: linear-gradient(135deg, #ff0066, #ff3399);
-  color: white;
-  border-color: #ff3399;
-}
-
-.threat-toggle-btn.mode-both {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border-color: #764ba2;
-}
-
-.threat-toggle-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-}
-
-.threat-toggle-btn:active {
-  transform: translateY(0);
-}
-
 .checkbox-label {
   display: flex;
   align-items: center;
