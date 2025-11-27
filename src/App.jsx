@@ -26,6 +26,8 @@ function App() {
   // Modes: 'off', 'white', 'black', 'both'
   const [threatMode, setThreatMode] = useState('both')
   const [capturedPieces, setCapturedPieces] = useState([])
+  const [showHighlights, setShowHighlights] = useState(true)
+  const [showHeatMap, setShowHeatMap] = useState(true)
 
   const handleCapturedPiecesChange = useCallback((pieces) => {
     setCapturedPieces(pieces)
@@ -60,6 +62,24 @@ function App() {
           <button className={`threat-toggle-btn mode-${threatMode}`} onClick={cycleThreatMode}>
             {getModeLabel()}
           </button>
+
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={showHighlights}
+              onChange={(e) => setShowHighlights(e.target.checked)}
+            />
+            Show piece highlights
+          </label>
+
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={showHeatMap}
+              onChange={(e) => setShowHeatMap(e.target.checked)}
+            />
+            Show threat heat map
+          </label>
         </div>
 
         <div className="captured-pieces">
@@ -90,6 +110,8 @@ function App() {
         <ChessBoard
           showWhiteThreats={threatMode === 'white' || threatMode === 'both'}
           showBlackThreats={threatMode === 'black' || threatMode === 'both'}
+          showHighlights={showHighlights}
+          showHeatMap={showHeatMap}
           onCapturedPiecesChange={handleCapturedPiecesChange}
         />
       </div>

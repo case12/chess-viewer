@@ -89,6 +89,23 @@
   transform: translateY(0);
 }
 
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #f0f0f0;
+  font-size: 1rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
 .captured-pieces {
   background: #1f1f1f;
   padding: 20px;

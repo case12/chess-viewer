@@ -119,11 +119,27 @@
 }
 
 .explosion {
-  font-size: clamp(14px, 2vw, 20px);
+  font-size: clamp(20px, 3vw, 32px);
   line-height: 1;
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
   flex-shrink: 0;
   display: inline-block;
+}
+
+.explosion.mini-piece {
+  font-size: clamp(18px, 2.5vw, 28px);
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.explosion.mini-piece.white {
+  color: #ffffff;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8));
+}
+
+.explosion.mini-piece.black {
+  color: #000000;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.6));
 }
 
 .square.light {
@@ -200,8 +216,27 @@
 }
 
 .piece.threatening {
-  animation: pulse 0.8s ease-in-out infinite;
   filter: drop-shadow(0 0 8px rgba(0, 150, 255, 0.9)) brightness(1.3);
+}
+
+.piece.threatening:not(.king-piece):not(.queen-piece):not(.bishop-piece):not(.knight-piece) {
+  animation: pulse 0.8s ease-in-out infinite;
+}
+
+.piece.king-piece.threatening {
+  animation: pulse-king 0.8s ease-in-out infinite;
+}
+
+.piece.queen-piece.threatening {
+  animation: pulse-queen 0.8s ease-in-out infinite;
+}
+
+.piece.bishop-piece.threatening {
+  animation: pulse-bishop 0.8s ease-in-out infinite;
+}
+
+.piece.knight-piece.threatening {
+  animation: pulse-knight 0.8s ease-in-out infinite;
 }
 
 @keyframes pulse {
@@ -210,6 +245,42 @@
   }
   50% {
     transform: scale(1.1);
+  }
+}
+
+@keyframes pulse-king {
+  0%, 100% {
+    transform: translateY(-9px) scale(1);
+  }
+  50% {
+    transform: translateY(-9px) scale(1.1);
+  }
+}
+
+@keyframes pulse-queen {
+  0%, 100% {
+    transform: translateY(-8px) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.1);
+  }
+}
+
+@keyframes pulse-bishop {
+  0%, 100% {
+    transform: translateY(-8px) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.1);
+  }
+}
+
+@keyframes pulse-knight {
+  0%, 100% {
+    transform: translateY(-5px) scale(1);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.1);
   }
 }
 

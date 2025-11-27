@@ -139,7 +139,7 @@ const FULL_PIECE_SET = {
   ]
 }
 
-function ChessBoard({ showWhiteThreats, showBlackThreats, onCapturedPiecesChange }) {
+function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showHeatMap, onCapturedPiecesChange }) {
   const [board, setBoard] = useState(INITIAL_BOARD)
   const [draggedPiece, setDraggedPiece] = useState(null)
   const [draggedFromCaptures, setDraggedFromCaptures] = useState(null)
@@ -200,6 +200,17 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, onCapturedPiecesChange
             to: targetIndex,
             color: piece.color,
             piece: piece.piece
+          })
+        })
+        // Also add defended squares (where friendly pieces control)
+        const defended = getDefendedSquares(index, piece, board)
+        defended.forEach(targetIndex => {
+          allThreats.push({
+            from: index,
+            to: targetIndex,
+            color: piece.color,
+            piece: piece.piece,
+            isDefense: true
           })
         })
       }
@@ -317,6 +328,115 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, onCapturedPiecesChange
         newCol += dc
       }
     })
+  }
+
+  // Helper for sliding pieces - defense (includes friendly pieces only)
+  function addSlidingDefense(row, col, directions, currentBoard, defended, pieceColor) {
+    directions.forEach(([dr, dc]) => {
+      let newRow = row + dr
+      let newCol = col + dc
+      while (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+        const targetIndex = newRow * 8 + newCol
+        const targetPiece = currentBoard[targetIndex]
+
+        // Only add friendly pieces (defended)
+        if (targetPiece && targetPiece.color === pieceColor) {
+          defended.push(targetIndex)
+        }
+
+        // Stop if there's any piece
+        if (targetPiece) {
+          break
+        }
+
+        newRow += dr
+        newCol += dc
+      }
+    })
+  }
+
+  // Get defended/controlled squares (includes friendly pieces)
+  function getDefendedSquares(index, piece, currentBoard) {
+    const row = Math.floor(index / 8)
+    const col = index % 8
+    const defended = []
+
+    switch (piece.piece) {
+      case 'pawn':
+        const direction = piece.color === 'white' ? -1 : 1
+        // Pawn defends diagonally
+        const attackCols = [col - 1, col + 1]
+        attackCols.forEach(c => {
+          if (c >= 0 && c < 8) {
+            const targetRow = row + direction
+            if (targetRow >= 0 && targetRow < 8) {
+              const targetIndex = targetRow * 8 + c
+              const targetPiece = currentBoard[targetIndex]
+              // Only include friendly pieces
+              if (targetPiece && targetPiece.color === piece.color) {
+                defended.push(targetIndex)
+              }
+            }
+          }
+        })
+        break
+
+      case 'knight':
+        const knightMoves = [
+          [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+          [1, -2], [1, 2], [2, -1], [2, 1]
+        ]
+        knightMoves.forEach(([dr, dc]) => {
+          const newRow = row + dr
+          const newCol = col + dc
+          if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+            const targetIndex = newRow * 8 + newCol
+            const targetPiece = currentBoard[targetIndex]
+            // Only include friendly pieces
+            if (targetPiece && targetPiece.color === piece.color) {
+              defended.push(targetIndex)
+            }
+          }
+        })
+        break
+
+      case 'bishop':
+        addSlidingDefense(row, col, [[1, 1], [1, -1], [-1, 1], [-1, -1]], currentBoard, defended, piece.color)
+        break
+
+      case 'rook':
+        addSlidingDefense(row, col, [[1, 0], [-1, 0], [0, 1], [0, -1]], currentBoard, defended, piece.color)
+        break
+
+      case 'queen':
+        addSlidingDefense(row, col, [
+          [1, 0], [-1, 0], [0, 1], [0, -1],
+          [1, 1], [1, -1], [-1, 1], [-1, -1]
+        ], currentBoard, defended, piece.color)
+        break
+
+      case 'king':
+        const kingMoves = [
+          [-1, -1], [-1, 0], [-1, 1],
+          [0, -1], [0, 1],
+          [1, -1], [1, 0], [1, 1]
+        ]
+        kingMoves.forEach(([dr, dc]) => {
+          const newRow = row + dr
+          const newCol = col + dc
+          if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+            const targetIndex = newRow * 8 + newCol
+            const targetPiece = currentBoard[targetIndex]
+            // Only include friendly pieces
+            if (targetPiece && targetPiece.color === piece.color) {
+              defended.push(targetIndex)
+            }
+          }
+        })
+        break
+    }
+
+    return defended
   }
 
   // Drag and drop handlers
@@ -449,6 +569,7 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, onCapturedPiecesChange
           const col = index % 8
           const isLight = (row + col) % 2 === 0
           const threatsToThisSquare = threatsBySquare[index] || []
+          const allThreatsToThisSquare = allThreatsBySquare[index] || []
 
           return (
             <div
@@ -460,7 +581,7 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, onCapturedPiecesChange
               onMouseLeave={() => setHoveredSquare(null)}
             >
               {/* Threat heat map overlay */}
-              {threatsToThisSquare.length > 0 && (
+              {showHeatMap && threatsToThisSquare.length > 0 && (
                 <div
                   className="threat-overlay"
                   style={{
@@ -469,20 +590,46 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, onCapturedPiecesChange
                 />
               )}
 
-              {/* Threat indicators */}
-              {threatsToThisSquare.length > 0 && (
+              {/* Threat and defense indicators */}
+              {showHighlights && (threatsToThisSquare.length > 0 || (square && threatsToThisSquare.some(t => t.color !== square.color))) && (
                 <div className="explosion-indicators">
+                  {/* Show attack indicators */}
                   {threatsToThisSquare.map((threat, i) => {
+                    // Skip if this is a friendly piece on this square (defender indicators shown separately)
+                    if (square && threat.color === square.color) {
+                      return null;
+                    }
                     // Check if this square has a piece that's being threatened by opposite color
                     const isCaptureThreat = square && square.color !== threat.color
-                    // Use bullseye for captures, white/black circles for empty squares
-                    const emoji = isCaptureThreat ? '🎯' : (threat.color === 'white' ? '⚪' : '⚫')
-                    return (
-                      <span key={i} className="explosion">
-                        {emoji}
-                      </span>
-                    )
+                    // Use bullseye for captures, mini piece for empty squares
+                    if (isCaptureThreat) {
+                      return (
+                        <span key={`threat-${i}`} className="explosion">
+                          🎯
+                        </span>
+                      )
+                    } else {
+                      // Show mini version of the threatening piece for empty squares
+                      const pieceSymbol = PIECES[threat.color][threat.piece]
+                      return (
+                        <span key={`threat-${i}`} className={`explosion mini-piece ${threat.color}`}>
+                          {pieceSymbol}
+                        </span>
+                      )
+                    }
                   })}
+                  {/* Show shields for defenders if piece is under attack */}
+                  {square && threatsToThisSquare.some(t => t.color !== square.color) && (() => {
+                    const defenders = threatsToThisSquare.filter(t => t.color === square.color);
+                    if (defenders.length > 0) {
+                      console.log(`Square ${index} (${square.piece} ${square.color}): ${defenders.length} defenders`);
+                    }
+                    return defenders.map((defender, i) => (
+                      <span key={`shield-${i}`} className="explosion">
+                        🛡️
+                      </span>
+                    ));
+                  })()}
                 </div>
               )}
 
