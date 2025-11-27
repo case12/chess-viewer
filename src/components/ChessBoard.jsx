@@ -139,7 +139,7 @@ const FULL_PIECE_SET = {
   ]
 }
 
-function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showHeatMap, onCapturedPiecesChange }) {
+function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showEmptySquareThreats, showHeatMap, onCapturedPiecesChange }) {
   // Load selected position from localStorage or use default
   const [selectedPosition, setSelectedPosition] = useState(() => {
     const saved = localStorage.getItem('selectedPosition')
@@ -651,6 +651,12 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showHe
                     }
                     // Check if this square has a piece that's being threatened by opposite color
                     const isCaptureThreat = square && square.color !== threat.color
+
+                    // Skip empty square threats if the option is disabled
+                    if (!isCaptureThreat && !showEmptySquareThreats) {
+                      return null;
+                    }
+
                     // Map piece names to letters
                     const pieceLetters = {
                       king: 'K',
@@ -661,11 +667,13 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showHe
                       pawn: 'P'
                     }
                     const pieceLetter = pieceLetters[threat.piece]
+                    // Check if the threat is coming from the hovered square
+                    const isThreatFromHoveredSquare = hoveredSquare !== null && threat.from === hoveredSquare
 
                     // Use bullseye for captures, letter for empty squares
                     if (isCaptureThreat) {
                       return (
-                        <span key={`threat-${i}`} className="explosion">
+                        <span key={`threat-${i}`} className={`explosion ${isThreatFromHoveredSquare ? 'highlighted' : ''}`}>
                           🎯
                         </span>
                       )
@@ -673,8 +681,8 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showHe
                       return (
                         <span
                           key={`threat-${i}`}
-                          className={`explosion mini-piece ${threat.color}`}
-                          style={{ color: tileColor }}
+                          className={`explosion mini-piece ${threat.color} ${isThreatFromHoveredSquare ? 'highlighted' : ''}`}
+                          style={{ color: isThreatFromHoveredSquare ? '#0066ff' : tileColor }}
                         >
                           {pieceLetter}
                         </span>
@@ -687,11 +695,14 @@ function ChessBoard({ showWhiteThreats, showBlackThreats, showHighlights, showHe
                     if (defenders.length > 0) {
                       console.log(`Square ${index} (${square.piece} ${square.color}): ${defenders.length} defenders`);
                     }
-                    return defenders.map((defender, i) => (
-                      <span key={`shield-${i}`} className="explosion">
-                        🛡️
-                      </span>
-                    ));
+                    return defenders.map((defender, i) => {
+                      const isDefenderFromHoveredSquare = hoveredSquare !== null && defender.from === hoveredSquare;
+                      return (
+                        <span key={`shield-${i}`} className={`explosion ${isDefenderFromHoveredSquare ? 'highlighted' : ''}`}>
+                          🛡️
+                        </span>
+                      );
+                    });
                   })()}
                 </div>
               )}

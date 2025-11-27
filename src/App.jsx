@@ -41,6 +41,10 @@ function App() {
     const saved = localStorage.getItem('showHeatMap')
     return saved !== null ? JSON.parse(saved) : true
   })
+  const [showEmptySquareThreats, setShowEmptySquareThreats] = useState(() => {
+    const saved = localStorage.getItem('showEmptySquareThreats')
+    return saved !== null ? JSON.parse(saved) : true
+  })
 
   // Save to localStorage whenever states change
   useEffect(() => {
@@ -58,6 +62,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem('showHeatMap', JSON.stringify(showHeatMap))
   }, [showHeatMap])
+
+  useEffect(() => {
+    localStorage.setItem('showEmptySquareThreats', JSON.stringify(showEmptySquareThreats))
+  }, [showEmptySquareThreats])
 
   const handleCapturedPiecesChange = useCallback((pieces) => {
     setCapturedPieces(pieces)
@@ -102,6 +110,15 @@ function App() {
           <label className="checkbox-label">
             <input
               type="checkbox"
+              checked={showEmptySquareThreats}
+              onChange={(e) => setShowEmptySquareThreats(e.target.checked)}
+            />
+            Show empty square threats
+          </label>
+
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
               checked={showHeatMap}
               onChange={(e) => setShowHeatMap(e.target.checked)}
             />
@@ -138,6 +155,7 @@ function App() {
           showWhiteThreats={showWhiteThreats}
           showBlackThreats={showBlackThreats}
           showHighlights={showHighlights}
+          showEmptySquareThreats={showEmptySquareThreats}
           showHeatMap={showHeatMap}
           onCapturedPiecesChange={handleCapturedPiecesChange}
         />
